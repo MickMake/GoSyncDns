@@ -570,7 +570,7 @@ func (d *DNS) Del(ttl uint32, fqdn string, ip ...string) error {
 			break
 		}
 
-		if len(fqdn) == 1 {
+		if len(ip) == 1 {
 			d.Clear()
 			d.Error = d.DelReverse(ttl, fqdn, ip[0])
 			if d.Error != nil {
