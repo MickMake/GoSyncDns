@@ -1,0 +1,107 @@
+project_name: GoSyncDNS
+release:
+  github:
+    owner: MickMake
+    name: GoSyncDns
+  name_template: '{{.Tag}}'
+milestones:
+- repo:
+    owner: MickMake
+    name: GoSyncDns
+  name_template: '{{ .Tag }}'
+scoop:
+  name: GoSyncDNS
+  commit_author:
+    name: goreleaserbot
+    email: goreleaser@carlosbecker.com
+  commit_msg_template: Scoop update for {{ .ProjectName }} version {{ .Tag }}
+builds:
+- id: GoSyncDNS
+  goos:
+  - linux
+  - darwin
+  - windows
+  goarch:
+  - "386"
+  - amd64
+  - arm
+  - arm64
+  goarm:
+  - "6"
+  gomips:
+  - hardfloat
+  targets:
+  - linux_386
+  - linux_amd64
+  - linux_arm_6
+  - linux_arm64
+  - darwin_amd64
+  - darwin_arm64
+  - windows_386
+  - windows_amd64
+  - windows_arm_6
+  - windows_arm64
+  dir: .
+  main: .
+  ldflags:
+  - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    -X main.builtBy=goreleaser
+  binary: GoSyncDNS
+  env:
+  - CGO_ENABLED=0
+  lang: go
+  gobinary: go
+archives:
+- id: default
+  builds:
+  - GoSyncDNS
+  name_template: '{{ .ProjectName }}-{{ .Os }}_{{ .Arch }}'
+  replacements:
+    "386": i386
+    amd64: amd64
+    darwin: darwin
+    linux: linux
+    windows: windows
+  format: tar.gz
+  wrap_in_directory: "false"
+  files:
+  - src: license*
+  - src: LICENSE*
+  - src: readme*
+  - src: README*
+  - src: changelog*
+  - src: CHANGELOG*
+  allow_different_binary_count: false
+snapshot:
+  name_template: '{{ .Tag }}-next'
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+changelog:
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+  sort: asc
+dist: dist
+env_files:
+  github_token: ~/.config/goreleaser/github_token
+  gitlab_token: ~/.config/goreleaser/gitlab_token
+  gitea_token: ~/.config/goreleaser/gitea_token
+before:
+  hooks:
+  - go mod download
+  - go generate ./...
+source:
+  name_template: '{{ .ProjectName }}-{{ .Version }}'
+  format: tar.gz
+gomod:
+  gobinary: go
+announce:
+  twitter:
+    message_template: '{{ .ProjectName }} {{ .Tag }} is out! Check it out at {{ .GitURL
+      }}/releases/tag/{{ .Tag }}'
+github_urls:
+  download: https://github.com
+gitlab_urls:
+  download: https://gitlab.com
