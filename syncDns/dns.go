@@ -17,6 +17,7 @@ type DNS struct {
 	HostPort     string
 	Domain       Domain
 	Error        error
+	Debug        bool
 
 	debug bool
 	msg   *dns.Msg
@@ -262,7 +263,18 @@ func (d *DNS) SyncToDomain(hosts ...host.Host) error {
 			d.Clear()
 
 			domain := d.FindDomain(h.AddrIPv4.String())
+			if d.Debug {
+				fmt.Printf("########################################\n")
+				fmt.Printf("# Domain: %s\n", domain)
+				fmt.Printf("########################################\n")
+			}
 			d.Error = h.ChangeDomain(domain)
+			if d.Error != nil {
+				break
+			}
+
+			d.Clear()
+			d.Error = d.Del(h.TTL, h.HostName.FQDN, "")
 			if d.Error != nil {
 				break
 			}
@@ -594,10 +606,10 @@ func (d *DNS) DelForward(ttl uint32, fqdn string, ips ...string) error {
 		d.msg.SetUpdate(h.Domain)
 
 		for _, ip := range ips {
+			d.msg.SetUpdate(h.Domain)
+
 			i := net.ParseIP(ip)
 			fmt.Printf("Deleting forward: %s => %s\n", h.FQDN, i.String())
-
-			d.msg.SetUpdate(h.Domain)
 
 			request := dns.A{
 				Hdr: dns.RR_Header{

@@ -5,6 +5,7 @@ import (
 	"GoSyncDNS/host"
 	"GoSyncDNS/syncMdns"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/grandcat/zeroconf"
 	"github.com/spf13/cobra"
 	"regexp"
@@ -149,6 +150,11 @@ func AddToDNS(m *syncMdns.MDNS, entry *zeroconf.ServiceEntry) error {
 		//}
 
 		//Hosts = append(Hosts, h)
+		if m.Debug {
+			fmt.Printf("\n########################################\n")
+			spew.Dump(h)
+			fmt.Printf("########################################\n")
+		}
 		m.Error = DNS.SyncToDomain(h)
 	}
 
