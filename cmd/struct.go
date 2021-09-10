@@ -16,25 +16,25 @@ const (
 	DefaultBinaryName = "GoSyncDNS"
 	EnvPrefix         = "GO_SYNC_DNS"
 
-	//flagPbxToken       = "token"
-	//flagPbxTokenExpiry = "token-expiry"
 	flagConfigFile = "config"
-	flagDebug      = "debug"
-	flagQuiet      = "quiet"
 
 	flagHost    = "host"
 	flagPort    = "port"
 	flagTimeout = "timeout"
 	flagDomain  = "domain"
+	flagMirror  = "mirror"
 
 	flagGoogleSheet       = "google-sheet"
 	flagGoogleSheetUpdate = "update"
 
-	defaultHost       = "localhost"
-	defaultConfigFile = "config.json"
-	defaultDomain     = "bonjour."
+	flagDebug = "debug"
+	flagQuiet = "quiet"
 
-	defaultTimeout = time.Duration(time.Second * 30)
+	defaultConfigFile = "config.json"
+	defaultHost       = "localhost"
+	defaultPort       = "53"
+	defaultDomain     = "local."
+	defaultTimeout    = time.Second * 30
 )
 
 //goland:noinspection GoUnusedFunction
@@ -67,12 +67,12 @@ type CommandArgs struct {
 	Debug   bool
 	Timeout time.Duration
 
-	ClientId     string
-	ClientSecret string
-	Username     string
-	Password     string
-	Domain       string
-	//pbxToken     string
+	ClientId       string
+	ClientSecret   string
+	Username       string
+	Password       string
+	Domain         string
+	MirrorDomain   string
 	pbxTokenExpiry string
 
 	GoogleSheet       string
@@ -98,7 +98,7 @@ func (ca *CommandArgs) ProcessArgs(cmd *cobra.Command, args []string) error {
 	for range Only.Once {
 		ca.Args = args
 
-		DNS = syncDns.New(ca.Host, ca.Domain)
+		DNS = syncDns.New(ca.Debug, ca.Host, ca.Domain, ca.MirrorDomain)
 		if DNS.Error != nil {
 			ca.Error = DNS.Error
 			break

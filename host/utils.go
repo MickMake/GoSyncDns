@@ -1,6 +1,10 @@
 package host
 
-import "strings"
+import (
+	"net"
+	"strconv"
+	"strings"
+)
 
 // SplitDomainName splits a name string into it's labels.
 // www.miek.nl. returns []string{"www", "miek", "nl"}
@@ -137,4 +141,53 @@ func IsFqdn(s string) bool {
 	// Test whether we have an even number of escape sequences before
 	// the dot or none.
 	return (len(s2)-i)%2 != 0
+}
+
+type Error struct{ err string }
+
+func (e *Error) Error() string {
+	if e == nil {
+		return "host: <nil>"
+	}
+	return "host: " + e.err
+}
+
+const hexDigit = "0123456789abcdef"
+
+// ReverseAddr returns the in-addr.arpa. or ip6.arpa. hostname of the IP
+// address suitable for reverse DNS (PTR) record lookups or an error if it fails
+// to parse the IP address.
+func ReverseAddr(addr string) (arpa string, err error) {
+	ip := net.ParseIP(addr)
+	if ip == nil {
+		return "", &Error{err: "unrecognized address: " + addr}
+	}
+	if v4 := ip.To4(); v4 != nil {
+		buf := make([]byte, 0, net.IPv4len*4+len("in-addr.arpa."))
+		// Add it, in reverse, to the buffer
+		for i := len(v4) - 1; i >= 0; i-- {
+			buf = strconv.AppendInt(buf, int64(v4[i]), 10)
+			buf = append(buf, '.')
+		}
+		// Append "in-addr.arpa." and return (buf already has the final .)
+		buf = append(buf, "in-addr.arpa."...)
+		return string(buf), nil
+	}
+	// Must be IPv6
+	buf := make([]byte, 0, net.IPv6len*4+len("ip6.arpa."))
+	// Add it, in reverse, to the buffer
+	for i := len(ip) - 1; i >= 0; i-- {
+		v := ip[i]
+		buf = append(buf, hexDigit[v&0xF], '.', hexDigit[v>>4], '.')
+	}
+	// Append "ip6.arpa." and return (buf already has the final .)
+	buf = append(buf, "ip6.arpa."...)
+	return string(buf), nil
+}
+
+func SetIfNotEmpty(s string, d string) string {
+	if s != "" {
+		return s
+	}
+	return d
 }

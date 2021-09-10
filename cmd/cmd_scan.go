@@ -28,6 +28,10 @@ var cmdScan = &cobra.Command{
 func cmdScanFunc(cmd *cobra.Command, args []string) {
 	for range Only.Once {
 		Cmd.Error = cmd.Help()
+
+		//Cmd.Error = Cmd.ProcessArgs(cmd, args)
+		//domain := DNS.FindDomain("127.0.0.1")
+		//fmt.Printf("Domain: %s\n", domain)
 	}
 }
 
@@ -91,12 +95,12 @@ func cmdScanUpdateFunc(cmd *cobra.Command, args []string) {
 	}
 }
 
-var Hosts host.Hosts
+//var Hosts host.Hosts
 
 func AddToDNS(m *syncMdns.MDNS, entry *zeroconf.ServiceEntry) error {
 	for range Only.Once {
 		//spew.Dump(entry)
-		var h host.Host
+		h := host.New()
 
 		reg := regexp.MustCompile(`^(\w+:\w+:\w+:\w+:\w+:\w+).*`)
 		mac := entry.ServiceInstanceName()
@@ -155,7 +159,11 @@ func AddToDNS(m *syncMdns.MDNS, entry *zeroconf.ServiceEntry) error {
 			spew.Dump(h)
 			fmt.Printf("########################################\n")
 		}
-		m.Error = DNS.SyncToDomain(h)
+
+		m.Error = DNS.SyncHosts(*h)
+		if m.Error != nil {
+			break
+		}
 	}
 
 	return m.Error

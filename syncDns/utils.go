@@ -2,60 +2,28 @@ package syncDns
 
 import (
 	"GoSyncDNS/Only"
-	"github.com/miekg/dns"
-	"net"
-	"regexp"
+	"GoSyncDNS/host"
 )
 
-//type Hostname struct {
-//	Name string
-//	Domain string
-//	FQDN string
-//}
-//func (d *DNS) ParseHostname(fqdn string) Hostname {
-//	var host Hostname
-//
-//	for range Only.Once {
-//		if fqdn == "" {
-//			break
-//		}
-//
-//		host.Domain = d.Domain.FQDN
-//		a := dns.SplitDomainName(fqdn)
-//		//fmt.Printf("%s / %s\n", a[0], a[1])
-//		switch len(a) {
-//		case 1:
-//			host.Name = a[0]
-//		case 2:
-//			host.Name = a[0]
-//			host.Domain = a[1] + "."
-//		}
-//
-//		host.FQDN = fmt.Sprintf("%s.%s", host.Name, host.Domain)
-//	}
-//
-//	return host
-//}
-
-type RevHostname struct {
-	Name string
-	Zone string
-}
-
-func (d *DNS) ParseReverse(ip string) RevHostname {
-	var host RevHostname
+func (d *DNS) toHostStruct(ttl string, fqdn string, ip string) *host.Host {
+	h := host.New()
 
 	for range Only.Once {
-		if ip == "" {
+		d.Error = h.SetTtlString(ttl)
+		if d.Error != nil {
 			break
 		}
 
-		i := net.ParseIP(ip)
-		host.Name, _ = dns.ReverseAddr(i.String())
-		reg := regexp.MustCompile(`^\d+\.`)
-		host.Zone = reg.ReplaceAllString(host.Name, "")
+		d.Error = h.SetHostName(fqdn)
+		if d.Error != nil {
+			break
+		}
 
+		d.Error = h.SetIpAddr(ip)
+		if d.Error != nil {
+			break
+		}
 	}
 
-	return host
+	return h
 }
