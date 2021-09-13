@@ -14,12 +14,12 @@ func (d *DNS) toHostStruct(ttl string, fqdn string, ip string) *host.Host {
 			break
 		}
 
-		d.Error = h.SetHostName(fqdn)
+		d.Error = h.LastHostname().SetHostName(fqdn)
 		if d.Error != nil {
 			break
 		}
 
-		d.Error = h.SetIpAddr(ip)
+		d.Error = h.LastHostname().SetIpAddr(ip)
 		if d.Error != nil {
 			break
 		}

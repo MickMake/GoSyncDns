@@ -29,23 +29,33 @@ func cmdLookupFunc(cmd *cobra.Command, args []string) {
 		}
 
 		args = fillArray(2, args)
-		h := DNS.Query(args[0], args[1])
-		if h.Error != nil {
-			Cmd.Error = h.Error
-			break
-		}
-		fmt.Printf("%v\n", h)
 
-		if h.NoIp() {
-			break
+		hs := DNS.QueryAll(args[0], args[1])
+		for _, h := range hs {
+			if h.Error != nil {
+				Cmd.Error = h.Error
+				break
+			}
+			fmt.Printf("%v\n", h)
 		}
 
-		h2 := DNS.Query(h.GetIpAddr().String(), args[1])
-		if h.Error != nil {
-			Cmd.Error = h.Error
-			break
-		}
-		fmt.Printf("%v\n", h2)
+		//h := DNS.Query(args[0], args[1])
+		//if h.Error != nil {
+		//	Cmd.Error = h.Error
+		//	break
+		//}
+		//fmt.Printf("%v\n", h)
+		//
+		//if h.NoIp() {
+		//	break
+		//}
+		//
+		//h2 := DNS.Query(h.GetIpAddr().String(), args[1])
+		//if h.Error != nil {
+		//	Cmd.Error = h.Error
+		//	break
+		//}
+		//fmt.Printf("%v\n", h2)
 
 	}
 }

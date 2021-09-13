@@ -102,11 +102,7 @@ func AddToDNS(m *syncMdns.MDNS, entry *zeroconf.ServiceEntry) error {
 		//spew.Dump(entry)
 		h := host.New()
 
-		reg := regexp.MustCompile(`^(\w+:\w+:\w+:\w+:\w+:\w+).*`)
-		mac := entry.ServiceInstanceName()
-		mac = reg.ReplaceAllString(mac, "$1")
-
-		h.Error = h.SetHostName(entry.HostName)
+		h.Error = h.LastHostname().SetHostName(entry.HostName)
 		if h.Error != nil {
 			break
 		}
@@ -124,7 +120,7 @@ func AddToDNS(m *syncMdns.MDNS, entry *zeroconf.ServiceEntry) error {
 		if len(entry.AddrIPv4) > 0 {
 			ip4 = entry.AddrIPv4[0].String()
 		}
-		h.Error = h.SetIpAddr(ip4)
+		_ = h.LastHostname().SetIpAddr(ip4)
 		//if h.Error != nil {
 		//	break
 		//}
@@ -133,7 +129,7 @@ func AddToDNS(m *syncMdns.MDNS, entry *zeroconf.ServiceEntry) error {
 		if len(entry.AddrIPv6) > 0 {
 			ip6 = entry.AddrIPv6[0].String()
 		}
-		h.Error = h.SetIpv6Addr(ip6)
+		_ = h.LastHostname().SetIpv6Addr(ip6)
 		//if h.Error != nil {
 		//	break
 		//}
@@ -148,10 +144,15 @@ func AddToDNS(m *syncMdns.MDNS, entry *zeroconf.ServiceEntry) error {
 		//	break
 		//}
 
-		h.Error = h.SetMac(mac)
-		//if h.Error != nil {
-		//	break
-		//}
+		reg := regexp.MustCompile(`^(\w+:\w+:\w+:\w+:\w+:\w+).*`)
+		mac := entry.ServiceInstanceName()
+		if reg.MatchString(mac) {
+			mac = reg.ReplaceAllString(mac, "$1")
+			h.Error = h.SetMac(mac)
+			//if h.Error != nil {
+			//	break
+			//}
+		}
 
 		//Hosts = append(Hosts, h)
 		if m.Debug {

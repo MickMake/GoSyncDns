@@ -117,7 +117,7 @@ func PrintEntry(m *MDNS, entry *zeroconf.ServiceEntry) error {
 		//log.Println(entry)
 		//fmt.Printf("%s\t%s\t# Port:%d Text:%s TTL:%d\tS:%s I:%s D:%s s:%s i:%s d:%s\n",
 		//	entry.AddrIPv4,
-		//	entry.HostName,
+		//	entry.HostNames,
 		//	entry.Port,
 		//	strings.Join(entry.Text, " "),
 		//	entry.TTL,
@@ -152,7 +152,7 @@ func AddToDNS(m *MDNS, entry *zeroconf.ServiceEntry) error {
 		//log.Println(entry)
 		//fmt.Printf("%s\t%s\t# Port:%d Text:%s TTL:%d\tS:%s I:%s D:%s s:%s i:%s d:%s\n",
 		//	entry.AddrIPv4,
-		//	entry.HostName,
+		//	entry.HostNames,
 		//	entry.Port,
 		//	strings.Join(entry.Text, " "),
 		//	entry.TTL,
