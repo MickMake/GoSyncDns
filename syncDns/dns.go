@@ -8,7 +8,6 @@ import (
 	"github.com/miekg/dns"
 	"net"
 	"strings"
-	"time"
 )
 
 type DNS struct {
@@ -573,88 +572,6 @@ func (d *DNS) SyncHost(domain string, h *host.Host) error {
 	return d.Error
 }
 
-func (d *DNS) AddTxt(h *host.Host, txt string, args ...interface{}) error {
-
-	for range Only.Once {
-		if txt == "" {
-			break
-		}
-		txt = fmt.Sprintf(txt, args...)
-		txtArray := strings.Split(txt, "\n")
-
-		for _, hn := range h.HostNames {
-			d.Clear()
-			d.msg.SetUpdate(hn.GetDomain())
-
-			request := dns.TXT{
-				Hdr: dns.RR_Header{
-					Name:   hn.GetFQDN(),
-					Rrtype: dns.TypeTXT,
-					Class:  dns.ClassINET,
-					Ttl:    h.GetTtl(),
-				},
-				Txt: txtArray,
-			}
-
-			fmt.Printf("%s - Adding TXT zone(%s): %s => ",
-				time.Now().Format("2006-02-01 15:04:05"),
-				hn.GetDomain(),
-				hn.GetFQDN(),
-			)
-			fmt.Println(strings.ReplaceAll(txt, "\n", "\t"))
-			d.msg.Insert([]dns.RR{&request})
-
-			d.Error = d.Execute()
-			if d.Error != nil {
-				fmt.Printf("Error updating: %s\n", d.Error)
-			}
-		}
-	}
-
-	return d.Error
-}
-
-func (d *DNS) DelTxt(h *host.Host) error {
-
-	for range Only.Once {
-		d.Error = h.IsValid()
-		if d.Error != nil {
-			break
-		}
-
-		for _, hn := range h.HostNames {
-			d.Clear()
-			d.msg.SetUpdate(hn.GetReverseZone())
-
-			request := dns.PTR{
-				Hdr: dns.RR_Header{
-					Name:     hn.GetFQDN(),
-					Rrtype:   dns.TypePTR,
-					Class:    dns.ClassINET,
-					Ttl:      h.GetTtl(),
-					Rdlength: 0,
-				},
-				Ptr: hn.GetFQDN(),
-			}
-
-			fmt.Printf("%s - Deleting reverse zone: %s\t%s => %s\n",
-				time.Now().Format("2006-02-01 15:04:05"),
-				hn.GetReverseZone(),
-				hn.GetReverse(),
-				hn.GetFQDN(),
-			)
-			d.msg.Remove([]dns.RR{&request})
-
-			d.Error = d.Execute()
-			if d.Error != nil {
-				fmt.Printf("Error updating: %s\n", d.Error)
-			}
-		}
-	}
-
-	return d.Error
-}
-
 func (d *DNS) Add(ttl string, fqdn string, ip string) error {
 
 	for range Only.Once {
@@ -678,82 +595,23 @@ func (d *DNS) Add(ttl string, fqdn string, ip string) error {
 	return d.Error
 }
 
-func (d *DNS) AddForward(h *host.Host) error {
+func (d *DNS) Del(ttl string, fqdn string, ip string) error {
 
 	for range Only.Once {
-		d.Error = h.IsValid()
+		h := d.toHostStruct(ttl, fqdn, ip)
+		if h.Error != nil {
+			d.Error = h.Error
+			continue
+		}
+
+		d.Error = d.DelForward(h)
 		if d.Error != nil {
 			break
 		}
 
-		for _, hn := range h.HostNames {
-			d.Clear()
-			d.msg.SetUpdate(hn.GetDomain())
-
-			request := dns.A{
-				Hdr: dns.RR_Header{
-					Name:   hn.GetFQDN(),
-					Rrtype: dns.TypeA,
-					Class:  dns.ClassINET,
-					Ttl:    h.GetTtl(), // 3600,
-				},
-				A: hn.GetIpAddr(),
-			}
-
-			fmt.Printf("%s - Adding forward zone(%s): %s => %s\n",
-				time.Now().Format("2006-02-01 15:04:05"),
-				hn.GetDomain(),
-				hn.GetFQDN(),
-				hn.GetIpAddr(),
-			)
-			d.msg.Insert([]dns.RR{&request})
-
-			d.Error = d.Execute()
-			if d.Error != nil {
-				fmt.Printf("Error updating: %s\n", d.Error)
-			}
-		}
-	}
-
-	return d.Error
-}
-
-func (d *DNS) AddReverse(h *host.Host) error {
-
-	for range Only.Once {
-		d.Error = h.IsValid()
+		d.Error = d.DelReverse(h)
 		if d.Error != nil {
 			break
-		}
-
-		for _, hn := range h.HostNames {
-			d.Clear()
-			d.msg.SetUpdate(hn.GetReverseZone())
-
-			request := dns.PTR{
-				Hdr: dns.RR_Header{
-					Name:     hn.GetReverse(),
-					Rrtype:   dns.TypePTR,
-					Class:    dns.ClassINET,
-					Ttl:      h.GetTtl(),
-					Rdlength: 0,
-				},
-				Ptr: hn.GetFQDN(),
-			}
-
-			// "2006-01-02 15:04:05.999999999 -0700 MST"
-			fmt.Printf("%s - Adding reverse zone(%s): %s => %s\n",
-				time.Now().Format("2006-02-01 15:04:05"),
-				hn.GetReverseZone(),
-				hn.GetReverse(),
-				hn.GetFQDN(),
-			)
-			d.msg.Insert([]dns.RR{&request})
-
-			d.Error = d.Execute()
-			if d.Error != nil {
-				fmt.Printf("Error updating: %s\n", d.Error)
-			}
 		}
 	}
 
@@ -821,23 +679,49 @@ func (d *DNS) DeleteAll(n string) error {
 	return d.Error
 }
 
-func (d *DNS) Del(ttl string, fqdn string, ip string) error {
+func (d *DNS) AddForward(h *host.Host) error {
 
 	for range Only.Once {
-		h := d.toHostStruct(ttl, fqdn, ip)
-		if h.Error != nil {
-			d.Error = h.Error
-			continue
-		}
-
-		d.Error = d.DelForward(h)
+		d.Error = h.IsValid()
 		if d.Error != nil {
 			break
 		}
 
-		d.Error = d.DelReverse(h)
-		if d.Error != nil {
-			break
+		for _, hn := range h.HostNames {
+			d.Clear()
+			d.msg.SetUpdate(hn.GetDomain())
+
+			request := dns.A{
+				Hdr: dns.RR_Header{
+					Name:   hn.GetFQDN(),
+					Rrtype: dns.TypeA,
+					Class:  dns.ClassINET,
+					Ttl:    h.GetTtl(), // 3600,
+				},
+				A: hn.GetIpAddr(),
+			}
+
+			_ = d.PrintLog(0, "Adding forward zone(%s)\n",
+				hn.GetForwardZone(),
+			)
+			_ = d.PrintLog(1, "%s -> %s\n",
+				hn.GetFQDN(),
+				hn.GetIpAddr(),
+			)
+
+			//fmt.Printf("%s - Adding forward zone(%s): %s\n%s\t- %s\n",
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	hn.GetDomain(),
+			//	hn.GetFQDN(),
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	hn.GetIpAddr(),
+			//)
+			d.msg.Insert([]dns.RR{&request})
+
+			d.Error = d.Execute()
+			if d.Error != nil {
+				fmt.Printf("Error updating: %s\n", d.Error)
+			}
 		}
 	}
 
@@ -866,12 +750,69 @@ func (d *DNS) DelForward(h *host.Host) error {
 				A: hn.GetIpAddr(),
 			}
 
-			fmt.Printf("%s - Deleting forward: %s => %s\n",
-				time.Now().Format("2006-02-01 15:04:05"),
+			_ = d.PrintLog(0, "Deleting forward zone(%s)\n",
+				hn.GetForwardZone(),
+			)
+			_ = d.PrintLog(1, "%s -> %s\n",
 				hn.GetFQDN(),
 				hn.GetIpAddr(),
 			)
+
+			//fmt.Printf("%s - Deleting forward zone(%s): %s\n%s\t- %s\n",
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	hn.GetFQDN(),
+			//	hn.GetIpAddr(),
+			//)
 			d.msg.Remove([]dns.RR{&request})
+
+			d.Error = d.Execute()
+			if d.Error != nil {
+				fmt.Printf("Error updating: %s\n", d.Error)
+			}
+		}
+	}
+
+	return d.Error
+}
+
+func (d *DNS) AddReverse(h *host.Host) error {
+
+	for range Only.Once {
+		d.Error = h.IsValid()
+		if d.Error != nil {
+			break
+		}
+
+		for _, hn := range h.HostNames {
+			d.Clear()
+			d.msg.SetUpdate(hn.GetReverseZone())
+
+			request := dns.PTR{
+				Hdr: dns.RR_Header{
+					Name:     hn.GetReverse(),
+					Rrtype:   dns.TypePTR,
+					Class:    dns.ClassINET,
+					Ttl:      h.GetTtl(),
+					Rdlength: 0,
+				},
+				Ptr: hn.GetFQDN(),
+			}
+
+			_ = d.PrintLog(0, "Adding reverse zone(%s)\n",
+				hn.GetReverseZone(),
+			)
+			_ = d.PrintLog(1, "%s -> %s\n",
+				hn.GetReverse(),
+				hn.GetFQDN(),
+			)
+
+			//fmt.Printf("%s - Adding reverse zone(%s): %s\n%s\t- %s\n",
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	hn.GetReverseZone(),
+			//	hn.GetReverse(),
+			//	hn.GetFQDN(),
+			//)
+			d.msg.Insert([]dns.RR{&request})
 
 			d.Error = d.Execute()
 			if d.Error != nil {
@@ -906,12 +847,133 @@ func (d *DNS) DelReverse(h *host.Host) error {
 				Ptr: hn.GetFQDN(),
 			}
 
-			fmt.Printf("%s - Deleting in zone: %s\t%s => %s\n",
-				time.Now().Format("2006-02-01 15:04:05"),
+			_ = d.PrintLog(0, "Deleting reverse zone(%s)\n",
 				hn.GetReverseZone(),
+			)
+			_ = d.PrintLog(1, "%s -> %s\n",
 				hn.GetReverse(),
 				hn.GetFQDN(),
 			)
+
+			//fmt.Printf("%s - Deleting reverse zone(%s): %s\n%s\t- %s\n",
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	hn.GetReverseZone(),
+			//	hn.GetReverse(),
+			//	hn.GetFQDN(),
+			//)
+			d.msg.Remove([]dns.RR{&request})
+
+			d.Error = d.Execute()
+			if d.Error != nil {
+				fmt.Printf("Error updating: %s\n", d.Error)
+			}
+		}
+	}
+
+	return d.Error
+}
+
+func (d *DNS) AddTxt(h *host.Host, txt string, args ...interface{}) error {
+
+	for range Only.Once {
+		if txt == "" {
+			break
+		}
+		txt = fmt.Sprintf(txt, args...)
+		txtArray := strings.Split(txt, "\n")
+		//txt = strings.ReplaceAll(txt, "\n", "\t")
+
+		for _, hn := range h.HostNames {
+			d.Clear()
+			d.msg.SetUpdate(hn.GetDomain())
+
+			request := dns.TXT{
+				Hdr: dns.RR_Header{
+					Name:   hn.GetFQDN(),
+					Rrtype: dns.TypeTXT,
+					Class:  dns.ClassINET,
+					Ttl:    h.GetTtl(),
+				},
+				Txt: txtArray,
+			}
+
+			_ = d.PrintLog(0, "Adding TXT zone(%s)\n",
+				hn.GetForwardZone(),
+			)
+			_ = d.PrintLog(1, "%s ->\n",
+				hn.GetFQDN(),
+			)
+			for _, st := range txtArray {
+				_ = d.PrintLog(2, "%s\n",
+					st,
+				)
+			}
+
+			//fmt.Printf("%s - Adding TXT zone(%s): %s\n",
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	hn.GetForwardZone(),
+			//	hn.GetFQDN(),
+			//)
+			//fmt.Printf("%s\t- %s\n",
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	txt,
+			//)
+			d.msg.Insert([]dns.RR{&request})
+
+			d.Error = d.Execute()
+			if d.Error != nil {
+				fmt.Printf("Error updating: %s\n", d.Error)
+			}
+		}
+	}
+
+	return d.Error
+}
+
+func (d *DNS) DelTxt(h *host.Host, txt string, args ...interface{}) error {
+
+	for range Only.Once {
+		d.Error = h.IsValid()
+		if d.Error != nil {
+			break
+		}
+		if txt == "" {
+			break
+		}
+		txt = fmt.Sprintf(txt, args...)
+		txtArray := strings.Split(txt, "\n")
+		txt = strings.ReplaceAll(txt, "\n", "\t")
+
+		for _, hn := range h.HostNames {
+			d.Clear()
+			d.msg.SetUpdate(hn.GetForwardZone())
+
+			request := dns.TXT{
+				Hdr: dns.RR_Header{
+					Name:     hn.GetFQDN(),
+					Rrtype:   dns.TypeTXT,
+					Class:    dns.ClassINET,
+					Ttl:      h.GetTtl(),
+					Rdlength: 0,
+				},
+				Txt: txtArray,
+			}
+
+			_ = d.PrintLog(0, "Deleting TXT zone(%s)\n",
+				hn.GetForwardZone(),
+				hn.GetFQDN(),
+			)
+			_ = d.PrintLog(1, "%s\n",
+				hn.GetFQDN(),
+			)
+
+			//fmt.Printf("%s - Deleting reverse zone(%s): %s\n%s\t- %s\n",
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	hn.GetReverseZone(),
+			//	hn.GetReverse(),
+			//	time.Now().Format("2006-02-01 15:04:05"),
+			//	hn.GetFQDN(),
+			//)
 			d.msg.Remove([]dns.RR{&request})
 
 			d.Error = d.Execute()
