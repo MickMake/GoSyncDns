@@ -532,7 +532,7 @@ func (d *DNS) SyncHost(domain string, h *host.Host) error {
 
 		txt := fmt.Sprintf("%s", h.GetText())
 		if h.Mac.String() != "" {
-			txt = fmt.Sprintf("Mac:%s\nPort:%d\nTTL:%d\nService:%s\nInstance:%s\nText:%s\n",
+			txt = fmt.Sprintf("MacAddress:%s\nPort:%d\nTTL:%d\nService:%s\nInstance:%s\nText:%s\n",
 				h.Mac.String(),
 				h.Port,
 				h.TTL,
@@ -628,6 +628,10 @@ func (d *DNS) DeleteAll(n string) error {
 		for _, name := range names {
 			for _, q := range d.QueryAll(name, "ANY") {
 				for _, hn := range q.HostNames {
+					if hn.GetDomain() == "" {
+						continue
+					}
+
 					d.Clear()
 					if hn.GetForwardZone() != "" {
 						d.Domain.FQDN = hn.GetForwardZone()
@@ -652,6 +656,10 @@ func (d *DNS) DeleteAll(n string) error {
 				}
 
 				for _, hn := range q.HostNames {
+					if hn.GetDomain() == "" {
+						continue
+					}
+
 					d.Clear()
 					if hn.GetReverseZone() != "" {
 						d.Domain.FQDN = hn.GetReverseZone()

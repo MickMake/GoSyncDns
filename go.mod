@@ -4,6 +4,9 @@ go 1.17
 
 require (
 	github.com/davecgh/go-spew v1.1.1
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/google/gopacket v1.1.19
+	github.com/grandcat/zeroconf v1.0.0
 	github.com/miekg/dns v1.1.43
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
@@ -13,7 +16,6 @@ require (
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect

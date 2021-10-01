@@ -63,7 +63,7 @@ type RevHostname struct {
 //		h.Error = h.SetInstance(src.Instance)
 //		h.Error = h.SetService(src.Service)
 //		h.Error = h.AppendRecords(src.Records...)
-//		h.Error = h.SetMac(src.Mac.String())
+//		h.Error = h.SetMac(src.MacAddress.String())
 //	}
 //
 //	return h.Error
@@ -87,7 +87,7 @@ func (h *Host) String() string {
 	ret += fmt.Sprintf("\n# Instance: %s", h.Instance)
 	ret += fmt.Sprintf("\n# Service: %s", h.Service)
 	//ret += fmt.Sprintf("\n# Records:\n\t%s", strings.Join(h.Records, "\n\t"))
-	ret += fmt.Sprintf("\n# Mac: %s", h.Mac)
+	ret += fmt.Sprintf("\n# MacAddress: %s", h.Mac)
 	ret += fmt.Sprintf("\n# isForward: %v", h.isForward)
 	//ret += fmt.Sprintf("\n# Last error: %s", h.Error)
 

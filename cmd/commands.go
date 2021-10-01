@@ -11,7 +11,7 @@ func InitCommands() error {
 
 	for range Only.Once {
 		rootCmd.AddCommand(cmdConfig, cmdHelpFlags, cmdList, cmdLookup, cmdAdd, cmdRemove, cmdDel, cmdScan)
-		cmdScan.AddCommand(cmdScanPrint, cmdScanUpdate)
+		cmdScan.AddCommand(cmdScanPrint, cmdScanUpdate, cmdScanNet)
 		cmdConfig.AddCommand(cmdConfigWrite, cmdConfigRead)
 
 		//foo := rootCmd.HelpTemplate()

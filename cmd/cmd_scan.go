@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"GoSyncDNS/Only"
+	"GoSyncDNS/discover"
 	"GoSyncDNS/host"
 	"GoSyncDNS/syncMdns"
 	"fmt"
@@ -89,6 +90,39 @@ func cmdScanUpdateFunc(cmd *cobra.Command, args []string) {
 		fmt.Println("Syncing MDNS with DNS...")
 		args = fillArray(2, args)
 		Cmd.Error = MDNS.Scan(args[0], args[1], AddToDNS)
+		if Cmd.Error != nil {
+			break
+		}
+	}
+}
+
+// ******************************************************************************** //
+var cmdScanNet = &cobra.Command{
+	Use:                   "dhcp <wait> [interface name]",
+	Aliases:               []string{"net"},
+	Short:                 fmt.Sprintf("Scan DHCP and show hosts."),
+	Long:                  fmt.Sprintf("Scan DHCP and show hosts."),
+	Example:               fmt.Sprintf("%s scan dhcp", DefaultBinaryName),
+	DisableFlagParsing:    false,
+	DisableFlagsInUseLine: false,
+	Run:                   cmdScanNetFunc,
+	Args:                  cobra.MinimumNArgs(1),
+}
+
+//goland:noinspection GoUnusedParameter
+func cmdScanNetFunc(cmd *cobra.Command, args []string) {
+	for range Only.Once {
+		Cmd.Error = Cmd.ProcessArgs(cmd, args)
+		if Cmd.Error != nil {
+			break
+		}
+
+		fmt.Println("Printing MDNS results...")
+		args = fillArray(2, args)
+		if args[1] == "" {
+			args[1] = "wlp0s20f3"
+		}
+		Cmd.Error = discover.ScanInterface(args[1])
 		if Cmd.Error != nil {
 			break
 		}
